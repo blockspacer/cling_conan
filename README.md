@@ -19,6 +19,10 @@ MIT for conan package. Packaged source uses own license, see https://releases.ll
 export CC=clang-6.0
 export CXX=clang++-6.0
 
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.) 
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
 $CC --version
 $CXX --version
 

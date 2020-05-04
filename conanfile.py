@@ -169,6 +169,19 @@ class ClingConan(ConanFile):
         cmake = CMake(self, set_cmake_flags=True)
         cmake.verbose = True
 
+        # don't hang all CPUs and force OS to kill build process
+        cpu_count = max(tools.cpu_count() - 3, 1)
+        self.output.info('Detected %s CPUs' % (cpu_count))
+
+        # see Building LLVM with CMake https://llvm.org/docs/CMake.html
+        cmake.definitions["LLVM_PARALLEL_COMPILE_JOBS"]=cpu_count
+        cmake.definitions["LLVM_COMPILER_JOBS"]=cpu_count
+        cmake.definitions["LLVM_PARALLEL_LINK_JOBS"]=1
+        #cmake.definitions["LLVM_LINK_LLVM_DYLIB"]=1
+
+        # see https://www.productive-cpp.com/improving-cpp-builds-with-split-dwarf/
+        cmake.definitions["LLVM_USE_SPLIT_DWARF"]="ON"
+
         cmake.definitions["CMAKE_CXX_STANDARD"]="17"
         cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
         cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
@@ -220,7 +233,7 @@ class ClingConan(ConanFile):
         cmake = self._configure_cmake()
 
         # don't hang all CPUs and force OS to kill build process
-        cpu_count = max(tools.cpu_count() - 1, 1)
+        cpu_count = max(tools.cpu_count() - 2, 1)
         self.output.info('Detected %s CPUs' % (cpu_count))
 
         # -j flag for parallel builds
