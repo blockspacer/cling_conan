@@ -19,14 +19,14 @@ class ClingConan(ConanFile):
     #license = "Apache-2.0" # TODO
     settings = "os", "arch", "compiler", "build_type"
     
-    options = {"shared": [True, False], "fPIC": [True, False]}
+    #options = {"shared": [True, False], "fPIC": [True, False]}
 
-    default_options = {
-        "shared": False,
-        "fPIC": True,
-        "*:shared": False,
-        "openssl:shared": True
-    }
+    #default_options = {
+    #    "shared": False,
+    #    "fPIC": True,
+    #    "*:shared": False,
+    #    "openssl:shared": True
+    #}
 
     exports = ["LICENSE.md"]
 
@@ -144,12 +144,12 @@ class ClingConan(ConanFile):
     def _clang_source_subfolder(self):
         return "clang"
 
-    def config_options(self):
-        if self.settings.os == "Windows":
-            del self.options.fPIC
-            del self.options.shared
-        elif self.settings.os == "Macos":
-            del self.options.shared
+    #def config_options(self):
+    #    if self.settings.os == "Windows":
+    #        del self.options.fPIC
+    #        del self.options.shared
+    #    elif self.settings.os == "Macos":
+    #        del self.options.shared
 
     def configure(self):
         compiler_version = Version(self.settings.compiler.version.value)
