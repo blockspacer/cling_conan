@@ -39,66 +39,21 @@ class ClingConan(ConanFile):
 
     llvm_libs = {
         'LLVMAnalysis': 0,
-        #'LLVMArchive': 0,
-        'LLVMAsmParser': 0,
-        'LLVMAsmPrinter': 0,
-        'LLVMBitReader': 0,
-        'LLVMBitWriter': 0,
-        'LLVMCodeGen': 0,
-        'LLVMCore': 0,
-        #'LLVMDebugInfo': 0,
-        'LLVMExecutionEngine': 0,
-        'LLVMIRReader': 0,
-        'LLVMInstCombine': 0,
-        'LLVMInstrumentation': 0,
-        'LLVMInterpreter': 0,
-        #'LLVMJIT': 0,
-        'LLVMLinker': 0,
-        'LLVMMC': 0,
-        'LLVMMCDisassembler': 0,
-        'LLVMMCJIT': 0,
-        'LLVMMCParser': 0,
-        'LLVMObjCARCOpts': 0,
-        'LLVMObject': 0,
-        'LLVMOption': 0,
-        'LLVMRuntimeDyld': 0,
-        'LLVMScalarOpts': 0,
-        'LLVMSelectionDAG': 0,
-        'LLVMSupport': 0,
-        'LLVMTableGen': 0,
-        'LLVMTarget': 0,
-        'LLVMTransformUtils': 0,
-        'LLVMVectorize': 0,
-        'LLVMX86AsmParser': 0,
-        'LLVMX86AsmPrinter': 0,
-        'LLVMX86CodeGen': 0,
-        'LLVMX86Desc': 0,
-        'LLVMX86Disassembler': 0,
-        'LLVMX86Info': 0,
-        'LLVMX86Utils': 0,
-        #'LLVMipa': 0,
-        'LLVMipo': 0,
-        'LTO': 0,
-        #'c++': 0,
-        'clang': 0,
         'clangARCMigrate': 0,
+        'clangAnalysis': 0,
         'clangAST': 0,
         'clangASTMatchers': 0,
-        'clangAnalysis': 0,
         'clangBasic': 0,
         'clangCodeGen': 0,
         'clangDriver': 0,
+        'clangDynamicASTMatchers': 0,
         'clangEdit': 0,
         'clangFormat': 0,
         'clangFrontend': 0,
         'clangFrontendTool': 0,
-        'clangLex': 0,
-        'clangDynamicASTMatchers': 0,
         'clangIndex': 0,
+        'clangLex': 0,
         'clangParse': 0,
-        'clangToolingCore': 0,
-        'clangToolingRefactor': 0,
-        #'clangRewriteCore': 0,
         'clangRewrite': 0,
         'clangRewriteFrontend': 0,
         'clangSema': 0,
@@ -107,14 +62,41 @@ class ClingConan(ConanFile):
         'clangStaticAnalyzerCore': 0,
         'clangStaticAnalyzerFrontend': 0,
         'clangTooling': 0,
-        'profile_rt': 0,
+        'clangToolingCore': 0,
+        'clangToolingRefactor': 0,
+        'clangStaticAnalyzerCore': 0,
+        'clangDynamicASTMatchers': 0,
+        'clangCodeGen': 0,
+        'clangFrontendTool': 0,
+        'clang': 0,
+        'clangEdit': 0,
+        'clangRewriteFrontend': 0,
+        'clangDriver': 0,
+        'clangSema': 0,
+        'clangASTMatchers': 0,
+        'clangSerialization': 0,
+        'clangBasic': 0,
+        'clangAST': 0,
+        'clangTooling': 0,
+        'clangStaticAnalyzerFrontend': 0,
+        'clangFormat': 0,
+        'clangToolingRefactor': 0,
+        'clangLex': 0,
+        'clangFrontend': 0,
+        'clangRewrite': 0,
+        'clangToolingCore': 0,
+        'clangIndex': 0,
+        'clangAnalysis': 0,
+        'clangParse': 0,
+        'clangStaticAnalyzerCheckers': 0,
+        'clangARCMigrate': 0,
     }
 
     cling_libs = {
         'clingInterpreter': 0,
         'clingMetaProcessor': 0,
         # /usr/lib/x86_64-linux-gnu/libdl.so: error adding symbols: DSO missing from command line
-        #'clingUtils': 0,
+        'clingUtils': 0,
         'cling': 0,
     }
 
@@ -328,9 +310,14 @@ class ClingConan(ConanFile):
         self.cpp_info.libs = list(self.cling_libs.keys())
         self.cpp_info.libs += list(self.llvm_libs.keys())
         #self.cpp_info.libs += ['c++abi']
-        self.cpp_info.libs.remove('profile_rt')
+        #self.cpp_info.libs.remove('profile_rt')
+        #self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "profile_rt" not in lib]
 
         #self.cpp_info.defines += ['LLVMDIR=%s' % (cpu_count)]
+
+        self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
+        self.output.info("Package folder: %s" % self.package_folder)
+        self.env_info.CONAN_CLING_ROOT = self.package_folder
 
 
 

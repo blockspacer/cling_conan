@@ -96,10 +96,132 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     #${DLIB_LIB_DIR}/libdlib.so
     tinfo
     ncurses
+    #
+    #-Wl,--start-group
+    #clangAST
+    #clangAnalysis
+    #clangBasic
+    #clangDriver
+    #clangEdit
+    #clangFrontend
+    #clangFrontendTool
+    #clangLex
+    #clangParse
+    #clangSema
+    #clangEdit
+    #clangASTMatchers
+    #clangRewrite
+    #clangRewriteFrontend
+    #clangStaticAnalyzerFrontend
+    #clangStaticAnalyzerCheckers
+    #clangStaticAnalyzerCore
+    #clangSerialization
+    #clangToolingCore
+    #clangTooling
+    #-Wl,--end-group
+    #LLVMLTO
+    #LLVMObjCARCOpts
+    #LLVMLinker
+    #LLVMBitWriter
+    #LLVMIRReader
+    #LLVMAsmParser
+    #LLVMR600CodeGen
+    #LLVMipo
+    #LLVMVectorize
+    #LLVMR600AsmParser
+    #LLVMR600Desc
+    #LLVMR600Info
+    #LLVMR600AsmPrinter
+    #LLVMSystemZDisassembler
+    #LLVMSystemZCodeGen
+    #LLVMSystemZAsmParser
+    #LLVMSystemZDesc
+    #LLVMSystemZInfo
+    #LLVMSystemZAsmPrinter
+    #LLVMHexagonDisassembler
+    #LLVMHexagonCodeGen
+    #LLVMHexagonDesc
+    #LLVMHexagonInfo
+    #LLVMNVPTXCodeGen
+    #LLVMNVPTXDesc
+    #LLVMNVPTXInfo
+    #LLVMNVPTXAsmPrinter
+    #LLVMCppBackendCodeGen
+    #LLVMCppBackendInfo
+    #LLVMMSP430CodeGen
+    #LLVMMSP430Desc
+    #LLVMMSP430Info
+    #LLVMMSP430AsmPrinter
+    #LLVMXCoreDisassembler
+    #LLVMXCoreCodeGen
+    #LLVMXCoreDesc
+    #LLVMXCoreInfo
+    #LLVMXCoreAsmPrinter
+    #LLVMMipsDisassembler
+    #LLVMMipsCodeGen
+    #LLVMMipsAsmParser
+    #LLVMMipsDesc
+    #LLVMMipsInfo
+    #LLVMMipsAsmPrinter
+    #LLVMAArch64Disassembler
+    #LLVMAArch64CodeGen
+    #LLVMAArch64AsmParser
+    #LLVMAArch64Desc
+    #LLVMAArch64Info
+    #LLVMAArch64AsmPrinter
+    #LLVMAArch64Utils
+    #LLVMARMDisassembler
+    #LLVMARMCodeGen
+    #LLVMARMAsmParser
+    #LLVMARMDesc
+    #LLVMARMInfo
+    #LLVMARMAsmPrinter
+    #LLVMPowerPCDisassembler
+    #LLVMPowerPCCodeGen
+    #LLVMPowerPCAsmParser
+    #LLVMPowerPCDesc
+    #LLVMPowerPCInfo
+    #LLVMPowerPCAsmPrinter
+    #LLVMSparcDisassembler
+    #LLVMSparcCodeGen
+    #LLVMSparcAsmParser
+    #LLVMSparcDesc
+    #LLVMSparcInfo
+    #LLVMSparcAsmPrinter
+    #LLVMTableGen
+    #LLVMDebugInfo
+    #LLVMOption
+    #LLVMX86Disassembler
+    #LLVMX86AsmParser
+    #LLVMX86CodeGen
+    #LLVMSelectionDAG
+    #LLVMAsmPrinter
+    #LLVMX86Desc
+    #LLVMMCDisassembler
+    #LLVMX86Info
+    #LLVMX86AsmPrinter
+    #LLVMX86Utils
+    #LLVMMCJIT
+    #LLVMLineEditor
+    #LLVMInstrumentation
+    #LLVMInterpreter
+    #LLVMExecutionEngine
+    #LLVMRuntimeDyld
+    #LLVMCodeGen
+    #LLVMScalarOpts
+    #LLVMProfileData
+    #LLVMObject
+    #LLVMMCParser
+    #LLVMBitReader
+    #LLVMInstCombine
+    #LLVMTransformUtils
+    #LLVMipa
+    #LLVMAnalysis
+    #LLVMTarget
+    #LLVMMC
+    #LLVMCore
+    #LLVMSupport
 )
-
-target_compile_options(${PROJECT_NAME} PRIVATE
-  -fno-rtti)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
   ${CLING_DEFINITIONS}
@@ -107,6 +229,13 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 
 # POSITION_INDEPENDENT_CODE for -fPIC
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+#set_property(TARGET ${PROJECT_NAME} PROPERTY 
+#  COMPILE_FLAGS -fno-rtti
+#)
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+  -fno-rtti)
 
 if(MSVC)
   set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
