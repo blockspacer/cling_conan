@@ -94,8 +94,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     ${CMAKE_DL_LIBS}
     #LIBDL::LIBDL
     #${DLIB_LIB_DIR}/libdlib.so
-    #tinfo
-    #ncurses
+    tinfo
+    ncurses
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE

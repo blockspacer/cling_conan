@@ -28,8 +28,8 @@ read https://llvm.org/docs/CMake.html and https://fuchsia.dev/fuchsia-src/develo
 ## Local build
 
 ```bash
-export CC=clang-6.0
-export CXX=clang++-6.0
+export CC=gcc
+export CXX=g++
 
 # https://www.pclinuxos.com/forum/index.php?topic=129566.0
 # export LDFLAGS="$LDFLAGS -ltinfo -lncurses"

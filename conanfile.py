@@ -80,12 +80,10 @@ class ClingConan(ConanFile):
         'LLVMipo': 0,
         'LTO': 0,
         #'c++': 0,
+        'clang': 0,
         'clangARCMigrate': 0,
         'clangAST': 0,
         'clangASTMatchers': 0,
-        'clangTooling': 0,
-        'clangToolingCore': 0,
-        'clangToolingRefactor': 0,
         'clangAnalysis': 0,
         'clangBasic': 0,
         'clangCodeGen': 0,
@@ -98,6 +96,8 @@ class ClingConan(ConanFile):
         'clangDynamicASTMatchers': 0,
         'clangIndex': 0,
         'clangParse': 0,
+        'clangToolingCore': 0,
+        'clangToolingRefactor': 0,
         #'clangRewriteCore': 0,
         'clangRewrite': 0,
         'clangRewriteFrontend': 0,
@@ -106,7 +106,7 @@ class ClingConan(ConanFile):
         'clangStaticAnalyzerCheckers': 0,
         'clangStaticAnalyzerCore': 0,
         'clangStaticAnalyzerFrontend': 0,
-        'clang': 0,
+        'clangTooling': 0,
         'profile_rt': 0,
     }
 
@@ -195,8 +195,8 @@ class ClingConan(ConanFile):
         cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
         #cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
         cmake.definitions["BUILD_TESTS"]="OFF"
-        cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
-        #cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
+        #cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
+        cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
         cmake.definitions["LLVM_BUILD_TESTS"]="OFF"
         cmake.definitions["LLVM_BUILD_EXAMPLES"]="OFF"
         cmake.definitions["LLVM_INCLUDE_TESTS"]="OFF"
@@ -207,9 +207,13 @@ class ClingConan(ConanFile):
         #cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
-
-        # LLVM_ENABLE_LIBCXX build parameter to compile using libc++ instead of the system default
-        #cmake.definitions["LLVM_ENABLE_LIBCXX"]="ON"
+        
+        # # allow changing clang version by environment variables `CC` and `CXX`, fallback to `clang`
+        # cmake.definitions["CMAKE_C_COMPILER"]="clang-6.0" if ("CC" not in os.environ) else os.environ['CC']
+        # cmake.definitions["CMAKE_CXX_COMPILER"]="clang++-6.0" if ("CXX" not in os.environ) else os.environ['CXX']
+        # cmake.definitions["LLVM_ENABLE_LLD"]="ON"
+        # # LLVM_ENABLE_LIBCXX build parameter to compile using libc++ instead of the system default
+        # cmake.definitions["LLVM_ENABLE_LIBCXX"]="ON"
 
         # LLVM_ENABLE_LLD
         
@@ -321,8 +325,8 @@ class ClingConan(ConanFile):
         self.output.info("Appending PATH environment variable: {}".format(libdir))
         self.env_info.PATH.append(libdir)
 
-        self.cpp_info.libs = list(self.llvm_libs.keys())
-        self.cpp_info.libs += list(self.cling_libs.keys())
+        self.cpp_info.libs = list(self.cling_libs.keys())
+        self.cpp_info.libs += list(self.llvm_libs.keys())
         #self.cpp_info.libs += ['c++abi']
         self.cpp_info.libs.remove('profile_rt')
 
