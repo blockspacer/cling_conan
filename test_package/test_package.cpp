@@ -103,6 +103,65 @@
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
 #include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/AST/ASTContext.h>
+#include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/ASTMatchers/ASTMatchersMacros.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/FrontendActions.h>
+#include <clang/Basic/SourceManager.h>
+#include <clang/Tooling/Tooling.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/AST/ASTContext.h>
+#include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/ASTMatchers/ASTMatchersMacros.h>
+#include <clang/AST/Type.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Sema/Sema.h>
+#include <clang/Basic/FileManager.h>
+#include <clang/Basic/LangOptions.h>
+#include <clang/Basic/SourceManager.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Sema/Sema.h>
+#include <clang/Lex/Lexer.h>
+#include <clang/Frontend/FrontendAction.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Tooling/Tooling.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/Driver/Options.h>
+#include <clang/AST/AST.h>
+#include <clang/AST/ASTContext.h>
+#include <clang/AST/ASTConsumer.h>
+#include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/FrontendActions.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Tooling/CommonOptionsParser.h>
+#include <clang/Tooling/Tooling.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Sema/Sema.h>
+#include <clang/Lex/Lexer.h>
+#include <clang/Frontend/FrontendAction.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Tooling/Tooling.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/Driver/Options.h>
+#include <clang/AST/AST.h>
+#include <clang/AST/ASTContext.h>
+#include <clang/AST/ASTConsumer.h>
+#include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/FrontendActions.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Tooling/CommonOptionsParser.h>
+#include <clang/Tooling/Tooling.h>
+#include <clang/Rewrite/Core/Rewriter.h>
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
@@ -112,7 +171,146 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 }
 
 
-namespace cling_utils {
+namespace cxxctp {
+
+using MatchResult
+  = clang::ast_matchers::MatchFinder::MatchResult;
+
+class AnnotationParser {
+public:
+  AnnotationParser() = default;
+};
+
+class AnnotationMatchHandler {
+public:
+  AnnotationMatchHandler(
+    AnnotationParser* annotationParser);
+
+  // may be used to rewrite matched clang declaration
+  void matchHandler(
+    clang::AnnotateAttr*
+    , const cxxctp::MatchResult&
+    , clang::Rewriter&
+    , const clang::Decl*);
+
+  // may be used to save result after clang-rewrite
+  void endSourceFileHandler(
+    const clang::FileID&
+    , const clang::FileEntry*
+    , clang::Rewriter&);
+
+private:
+  AnnotationParser* annotationParser_;
+};
+
+
+AnnotationMatchHandler::AnnotationMatchHandler(
+  AnnotationParser* annotationParser)
+  : annotationParser_(annotationParser)
+{
+}
+
+void AnnotationMatchHandler::matchHandler(
+  clang::AnnotateAttr* annotateAttr
+  , const cxxctp::MatchResult& matchResult
+  , clang::Rewriter& rewriter
+  , const clang::Decl* nodeDecl)
+{
+}
+
+void AnnotationMatchHandler::endSourceFileHandler(
+  const clang::FileID& fileID
+  , const clang::FileEntry* fileEntry
+  , clang::Rewriter& rewriter)
+{
+}
+
+class AnnotationMatchOptions
+{
+ public:
+  AnnotationMatchOptions(
+    std::string annotateName);
+
+  // name of |clang::AnnotateAttr| to find
+  std::string annotateName;
+
+private:
+ ~AnnotationMatchOptions() = default;
+};
+
+// Called when the |Match| registered for |clang::AnnotateAttr|
+// was successfully found in the AST.
+class AnnotateMatchCallback
+  : public clang::ast_matchers::MatchFinder::MatchCallback
+{
+public:
+  AnnotateMatchCallback(
+    clang::Rewriter &rewriter);
+
+  void run(const MatchResult& Result) override;
+
+private:
+  clang::Rewriter& rewriter_;
+};
+
+// The ASTConsumer will read AST.
+// It provides many interfaces to be overridden when
+// certain type of AST node has been parsed,
+// or after all the translation unit has been parsed.
+class AnnotateConsumer
+  : public clang::ASTConsumer
+{
+public:
+  explicit AnnotateConsumer(
+    clang::Rewriter &Rewriter);
+
+  ~AnnotateConsumer() override = default;
+
+  // HandleTranslationUnit() called only after
+  // the entire source file is parsed.
+  // Translation unit effectively represents an entire source file.
+  void HandleTranslationUnit(clang::ASTContext &Context) override;
+
+private:
+  clang::ast_matchers::MatchFinder matchFinder;
+};
+
+// We choose an ASTFrontendAction because we want to analyze
+// the AST representation of the source code
+class AnnotationMatchAction
+  : public clang::ASTFrontendAction
+{
+public:
+  using ASTConsumerPointer = std::unique_ptr<clang::ASTConsumer>;
+
+  explicit AnnotationMatchAction();
+
+  ASTConsumerPointer CreateASTConsumer(
+    // pass a pointer to the CompilerInstance because
+    // it contains a lot of contextual information
+    clang::CompilerInstance&
+    , llvm::StringRef filename) override;
+
+  bool BeginSourceFileAction(
+    // pass a pointer to the CompilerInstance because
+    // it contains a lot of contextual information
+    clang::CompilerInstance&) override;
+
+  void EndSourceFileAction() override;
+
+private:
+  // Rewriter lets you make textual changes to the source code
+  clang::Rewriter rewriter_;
+};
+
+// frontend action will only consume AST and find all declarations
+struct AnnotationMatchFactory
+  : public clang::tooling::FrontendActionFactory
+{
+  AnnotationMatchFactory();
+
+  clang::FrontendAction* create() override;
+};
 
 class ClingInterpreter {
 public:
@@ -319,7 +517,116 @@ cling::Interpreter::CompilationResult
   return compilationResult;
 }
 
-} // namespace cling_utils
+AnnotationMatchOptions::AnnotationMatchOptions(
+  std::string annotateName)
+  : annotateName(annotateName)
+{}
+
+AnnotateMatchCallback::AnnotateMatchCallback(
+  clang::Rewriter &rewriter)
+  : rewriter_(rewriter)
+{
+}
+
+void AnnotateMatchCallback::run(
+  const MatchResult& matchResult)
+{
+  const clang::Decl* nodeDecl
+    = matchResult.Nodes.getNodeAs<clang::Decl>(
+      "annotateName");
+  if (!nodeDecl || nodeDecl->isInvalidDecl()) {
+    return;
+  }
+
+  // When there is a #include <vector> in the source file,
+  // our find-decl will print out all the declarations
+  // in that included file, because these included files are parsed
+  // and consumed as a whole with our source file.
+  // To fix this, we need to check if the declarations
+  // are defined in our source file
+  {
+    clang::SourceManager& SM = rewriter_.getSourceMgr();
+    const clang::FileID& mainFileID = SM.getMainFileID();
+    const auto& FileID = SM.getFileID(nodeDecl->getLocation());
+    if (FileID != mainFileID) {
+      return;
+    }
+  }
+
+  clang::AnnotateAttr* annotateAttr
+    = nodeDecl->getAttr<clang::AnnotateAttr>();
+}
+
+AnnotateConsumer::AnnotateConsumer(
+  clang::Rewriter& rewriter)
+{
+  using namespace clang::ast_matchers;
+
+  auto hasAnnotateMatcher
+    = clang::ast_matchers::hasAttr(clang::attr::Annotate);
+
+  //In Clang, there are two basic types of AST classes:
+  // Decl and Stmt, which have many subclasses
+  // that covers all the AST nodes we will meet in a source file.
+  auto finderMatcher
+    = clang::ast_matchers::decl(hasAnnotateMatcher)
+      .bind("annotateName");
+
+  //matchFinder.addMatcher(finderMatcher, &annotateMatchCallback_);
+}
+
+void AnnotateConsumer::HandleTranslationUnit(
+  clang::ASTContext &Context)
+{
+  matchFinder.matchAST(Context);
+}
+
+AnnotationMatchAction::AnnotationMatchAction()
+{
+}
+
+AnnotationMatchAction::ASTConsumerPointer
+  AnnotationMatchAction::CreateASTConsumer(
+    clang::CompilerInstance& compilerInstance
+    , StringRef filename)
+{
+  rewriter_.setSourceMgr(
+    compilerInstance.getSourceManager()
+    , compilerInstance.getLangOpts());
+
+  return std::make_unique<AnnotateConsumer>(
+    rewriter_);
+}
+
+bool AnnotationMatchAction::BeginSourceFileAction(
+  clang::CompilerInstance&)
+{
+  return true;
+}
+
+void AnnotationMatchAction::EndSourceFileAction()
+{
+  ASTFrontendAction::EndSourceFileAction();
+
+  clang::SourceManager& SM = rewriter_.getSourceMgr();
+
+  const clang::FileID& mainFileID = SM.getMainFileID();
+
+  const clang::FileEntry* fileEntry
+    = SM.getFileEntryForID(mainFileID);
+}
+
+AnnotationMatchFactory::AnnotationMatchFactory()
+  : FrontendActionFactory() {
+}
+
+clang::FrontendAction*
+  AnnotationMatchFactory::create()
+{
+  return new AnnotationMatchAction();
+}
+
+} // namespace cxxctp
 
 int main(int argc, char* argv[]) 
 {
@@ -345,7 +652,7 @@ int main(int argc, char* argv[])
   std::vector<std::string> clingIncludePaths{".", "../"};
   std::vector<std::string> clingInterpreterArgs{"EmbedCling", "-DCLING_ENABLED=1", "-DCLING_IS_ON=1"};
 
-  cling_utils::ClingInterpreter clingInterpreter(
+  cxxctp::ClingInterpreter clingInterpreter(
         "MainClingInterpreter_debug_id"
         , clingInterpreterArgs
         , clingIncludePaths);

@@ -19,14 +19,11 @@ class ClingConan(ConanFile):
     #license = "Apache-2.0" # TODO
     settings = "os", "arch", "compiler", "build_type"
     
-    #options = {"shared": [True, False], "fPIC": [True, False]}
+    options = {"link_ltinfo": [True, False]}
 
-    #default_options = {
-    #    "shared": False,
-    #    "fPIC": True,
-    #    "*:shared": False,
-    #    "openssl:shared": True
-    #}
+    default_options = {
+        "link_ltinfo": False
+    }
 
     exports = ["LICENSE.md"]
 
@@ -83,10 +80,12 @@ class ClingConan(ConanFile):
         'LLVMipo': 0,
         'LTO': 0,
         #'c++': 0,
-        'clang': 0,
         'clangARCMigrate': 0,
         'clangAST': 0,
         'clangASTMatchers': 0,
+        'clangTooling': 0,
+        'clangToolingCore': 0,
+        'clangToolingRefactor': 0,
         'clangAnalysis': 0,
         'clangBasic': 0,
         'clangCodeGen': 0,
@@ -99,8 +98,6 @@ class ClingConan(ConanFile):
         'clangDynamicASTMatchers': 0,
         'clangIndex': 0,
         'clangParse': 0,
-        'clangToolingCore': 0,
-        'clangToolingRefactor': 0,
         #'clangRewriteCore': 0,
         'clangRewrite': 0,
         'clangRewriteFrontend': 0,
@@ -109,7 +106,7 @@ class ClingConan(ConanFile):
         'clangStaticAnalyzerCheckers': 0,
         'clangStaticAnalyzerCore': 0,
         'clangStaticAnalyzerFrontend': 0,
-        'clangTooling': 0,
+        'clang': 0,
         'profile_rt': 0,
     }
 
@@ -185,14 +182,21 @@ class ClingConan(ConanFile):
         #cmake.definitions["LLVM_LINK_LLVM_DYLIB"]=1
 
         # see https://www.productive-cpp.com/improving-cpp-builds-with-split-dwarf/
-        cmake.definitions["LLVM_USE_SPLIT_DWARF"]="ON"
+        #cmake.definitions["LLVM_USE_SPLIT_DWARF"]="ON"
+
+        # force Release build
+        #cmake.definitions["CMAKE_BUILD_TYPE"]="Release"
+
+        if self.options.link_ltinfo:
+            # https://github.com/MaskRay/ccls/issues/556
+            cmake.definitions["CMAKE_CXX_LINKER_FLAGS"]="-ltinfo"
 
         cmake.definitions["CMAKE_CXX_STANDARD"]="17"
         cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
-        cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
+        #cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
         cmake.definitions["BUILD_TESTS"]="OFF"
-        #cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
-        cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
+        cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
+        #cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
         cmake.definitions["LLVM_BUILD_TESTS"]="OFF"
         cmake.definitions["LLVM_BUILD_EXAMPLES"]="OFF"
         cmake.definitions["LLVM_INCLUDE_TESTS"]="OFF"
@@ -200,8 +204,18 @@ class ClingConan(ConanFile):
         cmake.definitions["LLVM_INCLUDE_EXAMPLES"]="OFF"
         cmake.definitions["LLVM_ENABLE_DOXYGEN"]="OFF"
         cmake.definitions["LLVM_ENABLE_RTTI"]="OFF"
+        #cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
+
+        # LLVM_ENABLE_LIBCXX build parameter to compile using libc++ instead of the system default
+        #cmake.definitions["LLVM_ENABLE_LIBCXX"]="ON"
+
+        # LLVM_ENABLE_LLD
+        
+        # Keep symbols for JIT resolution
+        #cmake.definitions["LLVM_NO_DEAD_STRIP"]="1"
+
         #cmake.definitions["CMAKE_INSTALL_PREFIX"]="../release"
         #cmake.definitions["CMAKE_BUILD_TYPE"]="Release"
 
@@ -307,8 +321,8 @@ class ClingConan(ConanFile):
         self.output.info("Appending PATH environment variable: {}".format(libdir))
         self.env_info.PATH.append(libdir)
 
-        self.cpp_info.libs = list(self.cling_libs.keys())
-        self.cpp_info.libs += list(self.llvm_libs.keys())
+        self.cpp_info.libs = list(self.llvm_libs.keys())
+        self.cpp_info.libs += list(self.cling_libs.keys())
         #self.cpp_info.libs += ['c++abi']
         self.cpp_info.libs.remove('profile_rt')
 

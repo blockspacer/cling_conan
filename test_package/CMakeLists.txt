@@ -94,17 +94,19 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     ${CMAKE_DL_LIBS}
     #LIBDL::LIBDL
     #${DLIB_LIB_DIR}/libdlib.so
+    #tinfo
+    #ncurses
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-  -frtti)
+  -fno-rtti)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
   ${CLING_DEFINITIONS}
 )
 
 # POSITION_INDEPENDENT_CODE for -fPIC
-# set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(MSVC)
   set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
