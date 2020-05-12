@@ -19,7 +19,7 @@ class ClingConan(ConanFile):
     #license = "Apache-2.0" # TODO
 
     # Constrains build_type inside a recipe to Release!
-    settings = {"os", "build_type": ["Release"], "compiler":, "arch"}
+    settings = {"os", "build_type", "compiler", "arch"}
 
     options = {"link_ltinfo": [True, False]}
 
@@ -134,6 +134,8 @@ class ClingConan(ConanFile):
 
     def configure(self):
         compiler_version = Version(self.settings.compiler.version.value)
+        if self.settings.build_type != "Release":
+            raise ConanInvalidConfiguration("This library is compatible only with Release builds. Debug build of llvm may take a lot of time or crash due to lack of RAM or CPU")
 
     def requirements(self):
         print('self.settings.compiler {}'.format(self.settings.compiler))
