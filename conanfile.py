@@ -17,8 +17,10 @@ class ClingConan(ConanFile):
     #url = "https://github.com/bincrafters/conan-folly" # TODO
     #homepage = "https://github.com/facebook/folly" # TODO
     #license = "Apache-2.0" # TODO
-    settings = "os", "arch", "compiler", "build_type"
-    
+
+    # Constrains build_type inside a recipe to Release!
+    settings = {"os", "build_type": ["Release"], "compiler":, "arch"}
+
     options = {"link_ltinfo": [True, False]}
 
     default_options = {
