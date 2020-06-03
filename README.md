@@ -34,7 +34,7 @@ export CXX=g++
 # https://www.pclinuxos.com/forum/index.php?topic=129566.0
 # export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
 
-# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.) 
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
 
@@ -60,6 +60,17 @@ CONAN_REVISIONS_ENABLED=1 \
     CONAN_PRINT_RUN_COMMANDS=1 \
     CONAN_LOGGING_LEVEL=10 \
     conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
+```
+
+## conan Flow
+
+```bash
+conan source .
+conan install --build missing --profile clang  -s build_type=Release .
+conan build . --build-folder=.
+conan package --build-folder=. .
+conan export-pkg . conan/stable --settings build_type=Release --force --profile clang
+conan test test_package cling_conan/master@conan/stable --settings build_type=Release --profile clang
 ```
 
 ## Avoid Debug build, prefer Release builds
