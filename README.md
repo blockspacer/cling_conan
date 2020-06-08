@@ -9,6 +9,8 @@ conan package for cling https://root.cern.ch/root/htmldoc/guides/users-guide/Cli
     clang_repo_url = "http://root.cern.ch/git/clang.git"
 ```
 
+NOTE: use `-s cling_conan:build_type=Release` during `conan install`
+
 ## LICENSE
 
 MIT for conan package. Packaged source uses own license, see https://releases.llvm.org/2.8/LICENSE.TXT and https://github.com/root-project/root/blob/master/LICENSE
