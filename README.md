@@ -62,6 +62,9 @@ CONAN_REVISIONS_ENABLED=1 \
     CONAN_PRINT_RUN_COMMANDS=1 \
     CONAN_LOGGING_LEVEL=10 \
     conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
+
+# clean build cache
+conan remove "*" --build --force
 ```
 
 ## conan Flow
