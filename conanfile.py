@@ -6,9 +6,9 @@ from conans.errors import ConanInvalidConfiguration
 class ClingConan(ConanFile):
     name = "cling_conan"
 
-    version = "master"
-    llvm_version = "cling-patches"
-    clang_version = "cling-patches"
+    version = "v0.9"
+    llvm_version = "cling-v0.9"
+    clang_version = "cling-v0.9"
 
     #llvm_source_version = "6.0.1"
 
@@ -19,7 +19,7 @@ class ClingConan(ConanFile):
     #license = "Apache-2.0" # TODO
 
     # Constrains build_type inside a recipe to Release!
-    settings = {"os", "build_type", "compiler", "arch"}
+    settings = "os_build", "build_type", "arch_build", "compiler", "arch"
 
     options = {"link_ltinfo": [True, False]}
 
@@ -39,6 +39,7 @@ class ClingConan(ConanFile):
     cling_repo_url = "http://root.cern.ch/git/cling.git"
     clang_repo_url = "http://root.cern.ch/git/clang.git"
 
+    # TODO: 'clangToolingRefactor': 0,
     llvm_libs = {
         'LLVMAnalysis': 0,
         'clangARCMigrate': 0,
@@ -65,7 +66,6 @@ class ClingConan(ConanFile):
         'clangStaticAnalyzerFrontend': 0,
         'clangTooling': 0,
         'clangToolingCore': 0,
-        'clangToolingRefactor': 0,
         'clangStaticAnalyzerCore': 0,
         'clangDynamicASTMatchers': 0,
         'clangCodeGen': 0,
@@ -82,7 +82,6 @@ class ClingConan(ConanFile):
         'clangTooling': 0,
         'clangStaticAnalyzerFrontend': 0,
         'clangFormat': 0,
-        'clangToolingRefactor': 0,
         'clangLex': 0,
         'clangFrontend': 0,
         'clangRewrite': 0,
@@ -126,10 +125,10 @@ class ClingConan(ConanFile):
         return "clang"
 
     #def config_options(self):
-    #    if self.settings.os == "Windows":
+    #    if self.settings.os_build == "Windows":
     #        del self.options.fPIC
     #        del self.options.shared
-    #    elif self.settings.os == "Macos":
+    #    elif self.settings.os_build == "Macos":
     #        del self.options.shared
 
     def configure(self):
@@ -193,7 +192,10 @@ class ClingConan(ConanFile):
         #cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
-        
+
+        # https://bugs.llvm.org/show_bug.cgi?id=44074
+        cmake.definitions["EXECUTION_ENGINE_USE_LLVM_UNWINDER"]="ON"
+
         # # allow changing clang version by environment variables `CC` and `CXX`, fallback to `clang`
         # cmake.definitions["CMAKE_C_COMPILER"]="clang-6.0" if ("CC" not in os.environ) else os.environ['CC']
         # cmake.definitions["CMAKE_CXX_COMPILER"]="clang++-6.0" if ("CXX" not in os.environ) else os.environ['CXX']
@@ -248,19 +250,19 @@ class ClingConan(ConanFile):
         # -j flag for parallel builds
         cmake.build(args=["--", "-j%s" % cpu_count])
 
-    def package(self):        
-        self.output.info('self.settings.os: %s' % (self.settings.os))
-        self.output.info('self.settings.build_type: %s' % (self.settings.build_type))
-
+    def package(self):
         self.copy(pattern=self._llvm_source_subfolder, dst="src", src=self.build_folder)
         self.copy(pattern="LICENSE", dst="licenses", src=self._llvm_source_subfolder)
         self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
         self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
         self.copy(pattern="*.h", dst="include", src="include", keep_path=True)
 
-        #if self.settings.os == 'Darwin':
+        # need to copy lib/cmake/cling/ClingTargets.cmake required by ClingConfig.cmake
+        self.copy('*', src='%s/lib/cmake' % (self.build_folder), dst='lib/cmake')
+
+        #if self.settings.os_build == 'Darwin':
         #    libext = 'dylib'
-        #elif self.settings.os == 'Linux':
+        #elif self.settings.os_build == 'Linux':
         #    libext = 'so'
 
         #self.copy('*', src='%s/include'  % self.install_dir, dst='include')
@@ -274,6 +276,9 @@ class ClingConan(ConanFile):
         cmake = self._configure_cmake()
         cmake.install()
 
+    # NOTE: do not append packaged paths to env_info.PATH, env_info.LD_LIBRARY_PATH, etc.
+    # because it can conflict with system compiler
+    # https://stackoverflow.com/q/54273632
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)        
         self.cpp_info.libs.sort(reverse=True)
@@ -281,22 +286,22 @@ class ClingConan(ConanFile):
         self.cpp_info.includedirs = ["include"]
         self.cpp_info.libdirs = ["lib"]
         self.cpp_info.bindirs = ["bin"]
-        self.env_info.LD_LIBRARY_PATH.append(
-            os.path.join(self.package_folder, "lib"))
-        self.env_info.PATH.append(os.path.join(self.package_folder, "bin"))
-        for libpath in self.deps_cpp_info.lib_paths:
-            self.env_info.LD_LIBRARY_PATH.append(libpath)
+        #self.env_info.LD_LIBRARY_PATH.append(
+        #    os.path.join(self.package_folder, "lib"))
+        #self.env_info.PATH.append(os.path.join(self.package_folder, "bin"))
+        #for libpath in self.deps_cpp_info.lib_paths:
+        #    self.env_info.LD_LIBRARY_PATH.append(libpath)
 
-        if self.settings.os == "Linux":
+        if self.settings.os_build == "Linux":
             self.cpp_info.libs.extend(["pthread", "m", "dl"])
             if self.settings.compiler == "clang" and self.settings.compiler.libcxx == "libstdc++":
                 self.cpp_info.libs.append("atomic")
-        elif self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+        elif self.settings.os_build == "Windows" and self.settings.compiler == "Visual Studio":
             self.cpp_info.libs.extend(["ws2_32", "Iphlpapi", "Crypt32"])
 
-        if (self.settings.os == "Linux" and self.settings.compiler == "clang" and
+        if (self.settings.os_build == "Linux" and self.settings.compiler == "clang" and
            Version(self.settings.compiler.version.value) == "6" and self.settings.compiler.libcxx == "libstdc++") or \
-           (self.settings.os == "Macos" and self.settings.compiler == "apple-clang" and
+           (self.settings.os_build == "Macos" and self.settings.compiler == "apple-clang" and
            Version(self.settings.compiler.version.value) == "9.0" and self.settings.compiler.libcxx == "libc++"):
             self.cpp_info.libs.append("atomic")
 
@@ -305,11 +310,11 @@ class ClingConan(ConanFile):
 
         bindir = os.path.join(self.package_folder, "bin")
         self.output.info("Appending PATH environment variable: {}".format(bindir))
-        self.env_info.PATH.append(bindir)
+        #self.env_info.PATH.append(bindir)
 
         libdir = os.path.join(self.package_folder, "lib")
         self.output.info("Appending PATH environment variable: {}".format(libdir))
-        self.env_info.PATH.append(libdir)
+        #self.env_info.PATH.append(libdir)
 
         self.cpp_info.libs = list(self.cling_libs.keys())
         self.cpp_info.libs += list(self.llvm_libs.keys())
@@ -323,5 +328,11 @@ class ClingConan(ConanFile):
         self.output.info("Package folder: %s" % self.package_folder)
         self.env_info.CONAN_CLING_ROOT = self.package_folder
 
-
-
+    # TODO: clang++-9 does not depend on arch,
+    # but tooling libs  depend on arch...
+    def package_id(self):
+        self.info.include_build_settings()
+        if self.settings.os_build == "Windows":
+            del self.info.settings.arch_build # same build is used for x86 and x86_64
+        del self.info.settings.arch
+        del self.info.settings.compiler

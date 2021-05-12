@@ -1,5 +1,7 @@
 # About
 
+Uses cling-v0.9
+
 conan package for cling https://root.cern.ch/root/htmldoc/guides/users-guide/Cling.html
 
 ```bash
@@ -45,7 +47,7 @@ $CXX --version
 
 conan remote add conan-center https://api.bintray.com/conan/conan/conan-center False
 
-export PKG_NAME=cling_conan/master@conan/stable
+export PKG_NAME=cling_conan/v0.9@conan/stable
 
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force $PKG_NAME || true)
@@ -67,15 +69,101 @@ CONAN_REVISIONS_ENABLED=1 \
 conan remove "*" --build --force
 ```
 
-## conan Flow
+## Build locally (revision with link_ltinfo disabled):
 
 ```bash
-conan source .
-conan install --build missing --profile clang  -s build_type=Release .
-conan build . --build-folder=.
-conan package --build-folder=. .
-conan export-pkg . conan/stable --settings build_type=Release --force --profile clang
-conan test test_package cling_conan/master@conan/stable --settings build_type=Release --profile clang
+export CC=gcc
+export CXX=g++
+
+# https://www.pclinuxos.com/forum/index.php?topic=129566.0
+# export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
+
+# If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
+# - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
+export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
+
+$CC --version
+$CXX --version
+
+# see BUGFIX (i386 instead of x86_64)
+export CXXFLAGS=-m64
+export CFLAGS=-m64
+export LDFLAGS=-m64
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan install . \
+    --install-folder local_build \
+    -s build_type=Release \
+    -s cling_conan:build_type=Release \
+    --profile clang \
+      -o cling_conan:link_ltinfo=False
+
+CONAN_REVISIONS_ENABLED=1 \
+CONAN_VERBOSE_TRACEBACK=1 \
+CONAN_PRINT_RUN_COMMANDS=1 \
+CONAN_LOGGING_LEVEL=10 \
+GIT_SSL_NO_VERIFY=true \
+  cmake -E time \
+    conan source . \
+    --source-folder local_build \
+    --install-folder local_build
+
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan build . \
+    --build-folder local_build \
+    --source-folder local_build \
+    --install-folder local_build
+
+# remove before `conan export-pkg`
+(CONAN_REVISIONS_ENABLED=1 \
+    conan remove --force cling_conan || true)
+
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan package . \
+    --build-folder local_build \
+    --package-folder local_build/package_dir \
+    --source-folder local_build \
+    --install-folder local_build
+
+CONAN_REVISIONS_ENABLED=1 \
+  CONAN_VERBOSE_TRACEBACK=1 \
+  CONAN_PRINT_RUN_COMMANDS=1 \
+  CONAN_LOGGING_LEVEL=10 \
+  GIT_SSL_NO_VERIFY=true \
+  conan export-pkg . \
+    conan/stable \
+    --package-folder local_build/package_dir \
+    --settings build_type=Release \
+    --force \
+    --profile clang \
+      -o cling_conan:link_ltinfo=False
+
+cmake -E time \
+  conan test test_package cling_conan/v0.9@conan/stable \
+  -s build_type=Release \
+  -s cling_conan:build_type=Release \
+  --profile clang \
+      -o cling_conan:link_ltinfo=False
+
+rm -rf local_build/package_dir
 ```
 
 ## Avoid Debug build, prefer Release builds
@@ -89,7 +177,7 @@ export MY_IP=$(ip route get 8.8.8.8 | sed -n '/src/{s/.*src *\([^ ]*\).*/\1/p;q}
 sudo -E docker build \
     --build-arg PKG_NAME=cling_conan \
     --build-arg PKG_CHANNEL=conan/stable \
-    --build-arg PKG_UPLOAD_NAME=cling_conan/master@conan/stable \
+    --build-arg PKG_UPLOAD_NAME=cling_conan/v0.9@conan/stable \
     --build-arg CONAN_EXTRA_REPOS="conan-local http://$MY_IP:8081/artifactory/api/conan/conan False" \
     --build-arg CONAN_EXTRA_REPOS_USER="user -p password1 -r conan-local admin" \
     --build-arg CONAN_UPLOAD="conan upload --all -r=conan-local -c --retry 3 --retry-wait 10 --force" \
@@ -99,7 +187,7 @@ sudo -E docker build \
 sudo -E docker build \
     --build-arg PKG_NAME=cling_conan \
     --build-arg PKG_CHANNEL=conan/stable \
-    --build-arg PKG_UPLOAD_NAME=cling_conan/master@conan/stable \
+    --build-arg PKG_UPLOAD_NAME=cling_conan/v0.9@conan/stable \
     --build-arg CONAN_EXTRA_REPOS="conan-local http://$MY_IP:8081/artifactory/api/conan/conan False" \
     --build-arg CONAN_EXTRA_REPOS_USER="user -p password1 -r conan-local admin" \
     --build-arg CONAN_UPLOAD="conan upload --all -r=conan-local -c --retry 3 --retry-wait 10 --force" \

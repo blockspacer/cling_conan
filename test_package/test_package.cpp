@@ -588,7 +588,7 @@ AnnotationMatchAction::AnnotationMatchAction()
 AnnotationMatchAction::ASTConsumerPointer
   AnnotationMatchAction::CreateASTConsumer(
     clang::CompilerInstance& compilerInstance
-    , StringRef filename)
+    , llvm::StringRef filename)
 {
   rewriter_.setSourceMgr(
     compilerInstance.getSourceManager()
