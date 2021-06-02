@@ -17,12 +17,18 @@ NOTE: use `-s cling_conan:build_type=Release` during `conan install`
 
 MIT for conan package. Packaged source uses own license, see https://releases.llvm.org/2.8/LICENSE.TXT and https://github.com/root-project/root/blob/master/LICENSE
 
+## Usage
+
+See https://github.com/root-project/cling/issues/342
+
 ## Before build
 
 ```bash
 sudo apt-get install build-essential
 
 sudo apt-get install libncurses5-dev libncursesw5-dev libtinfo-dev
+
+sudo apt-get install -y libunwind-dev
 
 # optionaL: swig4, libeidt-dev
 ```
@@ -32,6 +38,13 @@ read https://llvm.org/docs/CMake.html and https://fuchsia.dev/fuchsia-src/develo
 ## Local build
 
 ```bash
+export VERBOSE=1
+export CONAN_REVISIONS_ENABLED=1
+export CONAN_VERBOSE_TRACEBACK=1
+export CONAN_PRINT_RUN_COMMANDS=1
+export CONAN_LOGGING_LEVEL=10
+export GIT_SSL_NO_VERIFY=true
+
 export CC=gcc
 export CXX=g++
 
@@ -52,18 +65,9 @@ export PKG_NAME=cling_conan/v0.9@conan/stable
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force $PKG_NAME || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    GIT_SSL_NO_VERIFY=true \
-    conan create . conan/stable -s build_type=Release --profile clang --build missing
+conan create . conan/stable -s build_type=Release --profile clang --build missing
 
-CONAN_REVISIONS_ENABLED=1 \
-    CONAN_VERBOSE_TRACEBACK=1 \
-    CONAN_PRINT_RUN_COMMANDS=1 \
-    CONAN_LOGGING_LEVEL=10 \
-    conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
+conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
 
 # clean build cache
 conan remove "*" --build --force
@@ -81,6 +85,8 @@ export CXX=g++
 # If compilation of LLVM fails on your machine (`make` may be killed by OS due to lack of RAM e.t.c.)
 # - set env. var. CONAN_LLVM_SINGLE_THREAD_BUILD to 1.
 export CONAN_LLVM_SINGLE_THREAD_BUILD=1
+
+export VERBOSE=1
 export CONAN_REVISIONS_ENABLED=1
 export CONAN_VERBOSE_TRACEBACK=1
 export CONAN_PRINT_RUN_COMMANDS=1
@@ -95,66 +101,41 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan install . \
-    --install-folder local_build \
-    -s build_type=Release \
-    -s cling_conan:build_type=Release \
-    --profile clang \
-      -o cling_conan:link_ltinfo=False
+cmake -E time \
+  conan install . \
+  --install-folder local_build \
+  -s build_type=Release \
+  -s cling_conan:build_type=Release \
+  --profile clang \
+    -o cling_conan:link_ltinfo=False
 
-CONAN_REVISIONS_ENABLED=1 \
-CONAN_VERBOSE_TRACEBACK=1 \
-CONAN_PRINT_RUN_COMMANDS=1 \
-CONAN_LOGGING_LEVEL=10 \
-GIT_SSL_NO_VERIFY=true \
-  cmake -E time \
-    conan source . \
-    --source-folder local_build \
-    --install-folder local_build
+cmake -E time \
+  conan source . \
+  --source-folder local_build \
+  --install-folder local_build
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan build . \
-    --build-folder local_build \
-    --source-folder local_build \
-    --install-folder local_build
+conan build . \
+  --build-folder local_build \
+  --source-folder local_build \
+  --install-folder local_build
 
 # remove before `conan export-pkg`
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force cling_conan || true)
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan package . \
-    --build-folder local_build \
-    --package-folder local_build/package_dir \
-    --source-folder local_build \
-    --install-folder local_build
+conan package . \
+  --build-folder local_build \
+  --package-folder local_build/package_dir \
+  --source-folder local_build \
+  --install-folder local_build
 
-CONAN_REVISIONS_ENABLED=1 \
-  CONAN_VERBOSE_TRACEBACK=1 \
-  CONAN_PRINT_RUN_COMMANDS=1 \
-  CONAN_LOGGING_LEVEL=10 \
-  GIT_SSL_NO_VERIFY=true \
-  conan export-pkg . \
-    conan/stable \
-    --package-folder local_build/package_dir \
-    --settings build_type=Release \
-    --force \
-    --profile clang \
-      -o cling_conan:link_ltinfo=False
+conan export-pkg . \
+  conan/stable \
+  --package-folder local_build/package_dir \
+  --settings build_type=Release \
+  --force \
+  --profile clang \
+    -o cling_conan:link_ltinfo=False
 
 cmake -E time \
   conan test test_package cling_conan/v0.9@conan/stable \

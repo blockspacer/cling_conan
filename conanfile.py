@@ -3,10 +3,62 @@ from conans import ConanFile, CMake, tools
 from conans.tools import Version
 from conans.errors import ConanInvalidConfiguration
 
+# TODO: 'clangToolingRefactor': True,
+llvm_libs = [
+    'LLVMAnalysis',
+    'clangARCMigrate',
+    'clangAnalysis',
+    'clangAST',
+    'clangASTMatchers',
+    'clangBasic',
+    'clangCodeGen',
+    'clangDriver',
+    'clangDynamicASTMatchers',
+    'clangEdit',
+    'clangFormat',
+    'clangFrontend',
+    'clangFrontendTool',
+    'clangIndex',
+    'clangLex',
+    'clangParse',
+    'clangRewrite',
+    'clangRewriteFrontend',
+    'clangSema',
+    'clangSerialization',
+    'clangStaticAnalyzerCheckers',
+    'clangStaticAnalyzerCore',
+    'clangStaticAnalyzerFrontend',
+    'clangTooling',
+    'clangToolingCore',
+]
+
+default_llvm_libs = llvm_libs
+
+cling_libs = [
+    'clingInterpreter',
+    'clingMetaProcessor',
+    # /usr/lib/x86_64-linux-gnu/libdl.so: error adding symbols: DSO missing from command line
+    'clingUtils',
+    'cling',
+]
+
+default_cling_libs = cling_libs
+
+# Users locally they get the 1.0.0 version,
+# without defining any env-var at all,
+# and CI servers will append the build number.
+# USAGE
+# version = get_version("1.0.0")
+# BUILD_NUMBER=-pre1+build2 conan export-pkg . my_channel/release
+def get_version(version):
+    bn = os.getenv("BUILD_NUMBER")
+    return (version + bn) if bn else version
+
 class ClingConan(ConanFile):
     name = "cling_conan"
 
-    version = "v0.9"
+    version = get_version("v0.9")
+    cling_version = "v0.9"
     llvm_version = "cling-v0.9"
     clang_version = "cling-v0.9"
 
@@ -21,10 +73,20 @@ class ClingConan(ConanFile):
     # Constrains build_type inside a recipe to Release!
     settings = "os_build", "build_type", "arch_build", "compiler", "arch"
 
-    options = {"link_ltinfo": [True, False]}
+    options = {
+      **{
+        'with_' + library : [True, False] for library in llvm_libs },
+      **{
+        'with_' + library : [True, False] for library in cling_libs },
+      "link_ltinfo": [True, False]
+    }
 
     default_options = {
-        "link_ltinfo": False
+      **{
+        'with_' + library : library in default_llvm_libs for library in llvm_libs },
+      **{
+        'with_' + library : library in default_cling_libs for library in cling_libs },
+      "link_ltinfo": False
     }
 
     exports = ["LICENSE.md"]
@@ -38,68 +100,6 @@ class ClingConan(ConanFile):
     llvm_repo_url = "http://root.cern.ch/git/llvm.git"
     cling_repo_url = "http://root.cern.ch/git/cling.git"
     clang_repo_url = "http://root.cern.ch/git/clang.git"
-
-    # TODO: 'clangToolingRefactor': 0,
-    llvm_libs = {
-        'LLVMAnalysis': 0,
-        'clangARCMigrate': 0,
-        'clangAnalysis': 0,
-        'clangAST': 0,
-        'clangASTMatchers': 0,
-        'clangBasic': 0,
-        'clangCodeGen': 0,
-        'clangDriver': 0,
-        'clangDynamicASTMatchers': 0,
-        'clangEdit': 0,
-        'clangFormat': 0,
-        'clangFrontend': 0,
-        'clangFrontendTool': 0,
-        'clangIndex': 0,
-        'clangLex': 0,
-        'clangParse': 0,
-        'clangRewrite': 0,
-        'clangRewriteFrontend': 0,
-        'clangSema': 0,
-        'clangSerialization': 0,
-        'clangStaticAnalyzerCheckers': 0,
-        'clangStaticAnalyzerCore': 0,
-        'clangStaticAnalyzerFrontend': 0,
-        'clangTooling': 0,
-        'clangToolingCore': 0,
-        'clangStaticAnalyzerCore': 0,
-        'clangDynamicASTMatchers': 0,
-        'clangCodeGen': 0,
-        'clangFrontendTool': 0,
-        'clang': 0,
-        'clangEdit': 0,
-        'clangRewriteFrontend': 0,
-        'clangDriver': 0,
-        'clangSema': 0,
-        'clangASTMatchers': 0,
-        'clangSerialization': 0,
-        'clangBasic': 0,
-        'clangAST': 0,
-        'clangTooling': 0,
-        'clangStaticAnalyzerFrontend': 0,
-        'clangFormat': 0,
-        'clangLex': 0,
-        'clangFrontend': 0,
-        'clangRewrite': 0,
-        'clangToolingCore': 0,
-        'clangIndex': 0,
-        'clangAnalysis': 0,
-        'clangParse': 0,
-        'clangStaticAnalyzerCheckers': 0,
-        'clangARCMigrate': 0,
-    }
-
-    cling_libs = {
-        'clingInterpreter': 0,
-        'clingMetaProcessor': 0,
-        # /usr/lib/x86_64-linux-gnu/libdl.so: error adding symbols: DSO missing from command line
-        'clingUtils': 0,
-        'cling': 0,
-    }
 
     # conan search double-conversion* -r=conan-center
 #    requires = (
@@ -124,6 +124,10 @@ class ClingConan(ConanFile):
     def _clang_source_subfolder(self):
         return "clang"
 
+    @property
+    def _libcxx(self):
+      return str(self.settings.get_safe("compiler.libcxx"))
+
     #def config_options(self):
     #    if self.settings.os_build == "Windows":
     #        del self.options.fPIC
@@ -145,9 +149,9 @@ class ClingConan(ConanFile):
         with tools.chdir(self._llvm_source_subfolder):
             self.run('git checkout {}'.format(self.llvm_version))
             with tools.chdir("tools"):
-                self.run('git clone -b {} --progress --depth 100 --recursive --recurse-submodules {} {}'.format(self.version, self.cling_repo_url, self._cling_source_subfolder))
+                self.run('git clone -b {} --progress --depth 100 --recursive --recurse-submodules {} {}'.format(self.cling_version, self.cling_repo_url, self._cling_source_subfolder))
                 with tools.chdir(self._cling_source_subfolder):
-                    self.run('git checkout {}'.format(self.version))
+                    self.run('git checkout {}'.format(self.cling_version))
                 self.run('git clone -b {} --progress --depth 100 --recursive --recurse-submodules {} {}'.format(self.clang_version, self.clang_repo_url, self._clang_source_subfolder))
                 with tools.chdir(self._clang_source_subfolder):
                     self.run('git checkout {}'.format(self.clang_version))
@@ -188,8 +192,8 @@ class ClingConan(ConanFile):
         cmake.definitions["LLVM_INCLUDE_BENCHMARKS"]="OFF"
         cmake.definitions["LLVM_INCLUDE_EXAMPLES"]="OFF"
         cmake.definitions["LLVM_ENABLE_DOXYGEN"]="OFF"
-        cmake.definitions["LLVM_ENABLE_RTTI"]="OFF"
-        #cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
+        #cmake.definitions["LLVM_ENABLE_RTTI"]="OFF"
+        cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
 
@@ -267,7 +271,7 @@ class ClingConan(ConanFile):
 
         #self.copy('*', src='%s/include'  % self.install_dir, dst='include')
 
-        #for f in list(self.llvm_libs.keys()):
+        #for f in list(llvm_libs.keys()):
         #    self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self._llvm_source_subfolder, dst='lib')
         #self.copy('*', src='%s/lib/clang/%s/lib/darwin' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/lib/darwin' % self.llvm_source_version)
         # Yes, these are include files that need to be copied to the lib folder.
@@ -280,12 +284,12 @@ class ClingConan(ConanFile):
     # because it can conflict with system compiler
     # https://stackoverflow.com/q/54273632
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)        
-        self.cpp_info.libs.sort(reverse=True)
+        #self.cpp_info.libs = tools.collect_libs(self)
+        #self.cpp_info.libs.sort(reverse=True)
 
         self.cpp_info.includedirs = ["include"]
         self.cpp_info.libdirs = ["lib"]
-        self.cpp_info.bindirs = ["bin"]
+        self.cpp_info.bindirs = ["bin", "libexec"]
         #self.env_info.LD_LIBRARY_PATH.append(
         #    os.path.join(self.package_folder, "lib"))
         #self.env_info.PATH.append(os.path.join(self.package_folder, "bin"))
@@ -293,20 +297,23 @@ class ClingConan(ConanFile):
         #    self.env_info.LD_LIBRARY_PATH.append(libpath)
 
         if self.settings.os_build == "Linux":
-            self.cpp_info.libs.extend(["pthread", "m", "dl"])
-            if self.settings.compiler == "clang" and self.settings.compiler.libcxx == "libstdc++":
-                self.cpp_info.libs.append("atomic")
+            self.cpp_info.system_libs.extend(["pthread", "unwind", "z", "m", "dl", "ncurses", "tinfo"])
+            if self.settings.compiler == "clang" and self._libcxx == "libstdc++":
+                self.cpp_info.system_libs.append("atomic")
         elif self.settings.os_build == "Windows" and self.settings.compiler == "Visual Studio":
-            self.cpp_info.libs.extend(["ws2_32", "Iphlpapi", "Crypt32"])
+            self.cpp_info.system_libs.extend(["ws2_32", "Iphlpapi", "Crypt32"])
 
         if (self.settings.os_build == "Linux" and self.settings.compiler == "clang" and
-           Version(self.settings.compiler.version.value) == "6" and self.settings.compiler.libcxx == "libstdc++") or \
+           Version(self.settings.compiler.version.value) == "6" and self._libcxx == "libstdc++") or \
            (self.settings.os_build == "Macos" and self.settings.compiler == "apple-clang" and
-           Version(self.settings.compiler.version.value) == "9.0" and self.settings.compiler.libcxx == "libc++"):
-            self.cpp_info.libs.append("atomic")
+           Version(self.settings.compiler.version.value) == "9.0" and self._libcxx == "libc++"):
+            self.cpp_info.system_libs.append("atomic")
 
         self.cpp_info.includedirs.append(os.path.join(self.package_folder, "include"))
         self.cpp_info.includedirs.append(self.package_folder)        
+
+        self.cpp_info.libdirs.append(os.path.join(self.package_folder, "lib"))
+        self.cpp_info.libdirs.append(self.package_folder)
 
         bindir = os.path.join(self.package_folder, "bin")
         self.output.info("Appending PATH environment variable: {}".format(bindir))
@@ -316,8 +323,16 @@ class ClingConan(ConanFile):
         self.output.info("Appending PATH environment variable: {}".format(libdir))
         #self.env_info.PATH.append(libdir)
 
-        self.cpp_info.libs = list(self.cling_libs.keys())
-        self.cpp_info.libs += list(self.llvm_libs.keys())
+        enabled_cling_libs = [library for library in cling_libs \
+          if getattr(self.options, 'with_' + library)]
+        self.output.info('Enabled LLVM libs: {}'.format(', '.join(enabled_cling_libs)))
+        self.cpp_info.libs.extend(enabled_cling_libs)
+
+        enabled_llvm_libs = [library for library in llvm_libs \
+          if getattr(self.options, 'with_' + library)]
+        self.output.info('Enabled LLVM libs: {}'.format(', '.join(enabled_llvm_libs)))
+        self.cpp_info.libs.extend(enabled_llvm_libs)
+
         #self.cpp_info.libs += ['c++abi']
         #self.cpp_info.libs.remove('profile_rt')
         #self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "profile_rt" not in lib]
@@ -328,11 +343,10 @@ class ClingConan(ConanFile):
         self.output.info("Package folder: %s" % self.package_folder)
         self.env_info.CONAN_CLING_ROOT = self.package_folder
 
-    # TODO: clang++-9 does not depend on arch,
-    # but tooling libs  depend on arch...
+    # We use Cling as library, so compiler settings and arch matter!
+    # You must use same CXX ABI as Cling libs
+    # otherwise you will get link errors!
     def package_id(self):
         self.info.include_build_settings()
         if self.settings.os_build == "Windows":
             del self.info.settings.arch_build # same build is used for x86 and x86_64
-        del self.info.settings.arch
-        del self.info.settings.compiler
