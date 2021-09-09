@@ -164,6 +164,13 @@ class ClingConan(ConanFile):
         cpu_count = max(tools.cpu_count() - 3, 1)
         self.output.info('Detected %s CPUs' % (cpu_count))
 
+        cmake.definitions["LLVM_INSTALL_CCTOOLS_SYMLINKS"]="OFF"
+        cmake.definitions["LLVM_INSTALL_BINUTILS_SYMLINKS"]="OFF"
+        cmake.definitions["LLVM_INSTALL_UTILS"]="OFF"
+
+        # cmake.definitions["LLVM_INCLUDE_TOOLS"]="OFF"
+        # cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
+
         # see Building LLVM with CMake https://llvm.org/docs/CMake.html
         cmake.definitions["LLVM_PARALLEL_COMPILE_JOBS"]=cpu_count
         cmake.definitions["LLVM_COMPILER_JOBS"]=cpu_count
@@ -184,8 +191,6 @@ class ClingConan(ConanFile):
         cmake.definitions["BUILD_SHARED_LIBS"]="OFF"
         #cmake.definitions["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
         cmake.definitions["BUILD_TESTS"]="OFF"
-        #cmake.definitions["LLVM_BUILD_TOOLS"]="OFF"
-        cmake.definitions["LLVM_BUILD_TOOLS"]="ON"
         cmake.definitions["LLVM_BUILD_TESTS"]="OFF"
         cmake.definitions["LLVM_BUILD_EXAMPLES"]="OFF"
         cmake.definitions["LLVM_INCLUDE_TESTS"]="OFF"
@@ -196,6 +201,9 @@ class ClingConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_RTTI"]="ON"
         cmake.definitions["LLVM_OPTIMIZED_TABLEGEN"]="ON"
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"]="OFF"
+
+        # clang clang-tools-extra libunwind lld compiler-rt
+        # cmake.definitions["LLVM_ENABLE_PROJECTS"]="clang;libcxx;libcxxabi"
 
         # https://bugs.llvm.org/show_bug.cgi?id=44074
         cmake.definitions["EXECUTION_ENGINE_USE_LLVM_UNWINDER"]="ON"

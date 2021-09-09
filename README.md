@@ -35,6 +35,32 @@ sudo apt-get install -y libunwind-dev
 
 read https://llvm.org/docs/CMake.html and https://fuchsia.dev/fuchsia-src/development/build/toolchain and https://github.com/deepinwiki/wiki/wiki/%E7%94%A8LLVM%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8
 
+Create conan profile `~/.conan/profiles/clang12_compiler`:
+
+```
+[settings]
+# We are building in Ubuntu Linux
+
+os_build=Linux
+os=Linux
+arch_build=x86_64
+arch=x86_64
+
+compiler=clang
+compiler.version=12
+compiler.libcxx=libstdc++11
+compiler.cppstd=17
+
+llvm_9:build_type=Release
+
+[env]
+CC=/usr/bin/clang-12
+CXX=/usr/bin/clang++-12
+
+[build_requires]
+cmake_installer/3.15.5@conan/stable
+```
+
 ## Local build
 
 ```bash
@@ -43,7 +69,6 @@ export CONAN_REVISIONS_ENABLED=1
 export CONAN_VERBOSE_TRACEBACK=1
 export CONAN_PRINT_RUN_COMMANDS=1
 export CONAN_LOGGING_LEVEL=10
-export GIT_SSL_NO_VERIFY=true
 
 export CC=gcc
 export CXX=g++
@@ -65,7 +90,7 @@ export PKG_NAME=cling_conan/v0.9@conan/stable
 (CONAN_REVISIONS_ENABLED=1 \
     conan remove --force $PKG_NAME || true)
 
-conan create . conan/stable -s build_type=Release --profile clang --build missing
+conan create . conan/stable -s build_type=Release --profile clang12_compiler --build missing
 
 conan upload $PKG_NAME --all -r=conan-local -c --retry 3 --retry-wait 10 --force
 
@@ -76,9 +101,6 @@ conan remove "*" --build --force
 ## Build locally (revision with link_ltinfo disabled):
 
 ```bash
-export CC=gcc
-export CXX=g++
-
 # https://www.pclinuxos.com/forum/index.php?topic=129566.0
 # export LDFLAGS="$LDFLAGS -ltinfo -lncurses"
 
@@ -91,7 +113,6 @@ export CONAN_REVISIONS_ENABLED=1
 export CONAN_VERBOSE_TRACEBACK=1
 export CONAN_PRINT_RUN_COMMANDS=1
 export CONAN_LOGGING_LEVEL=10
-export GIT_SSL_NO_VERIFY=true
 
 $CC --version
 $CXX --version
@@ -101,12 +122,14 @@ export CXXFLAGS=-m64
 export CFLAGS=-m64
 export LDFLAGS=-m64
 
+rm -rf local_build
+
 cmake -E time \
   conan install . \
   --install-folder local_build \
   -s build_type=Release \
   -s cling_conan:build_type=Release \
-  --profile clang \
+  --profile clang12_compiler \
     -o cling_conan:link_ltinfo=False
 
 cmake -E time \
@@ -134,14 +157,14 @@ conan export-pkg . \
   --package-folder local_build/package_dir \
   --settings build_type=Release \
   --force \
-  --profile clang \
+  --profile clang12_compiler \
     -o cling_conan:link_ltinfo=False
 
 cmake -E time \
   conan test test_package cling_conan/v0.9@conan/stable \
   -s build_type=Release \
   -s cling_conan:build_type=Release \
-  --profile clang \
+  --profile clang12_compiler \
       -o cling_conan:link_ltinfo=False
 
 rm -rf local_build/package_dir
