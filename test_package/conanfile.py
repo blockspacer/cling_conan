@@ -13,9 +13,9 @@ class TestPackageConan(ConanFile):
 
 #    def requirements(self):
 
-        #self.requires("boost/1.71.0@conan/stable")
+        #self.requires("boost/1.72.0@conan/stable")
 #
-        #self.requires("double-conversion/3.1.1@bincrafters/stable")
+        #self.requires("double-conversion/3.1.4@conan/stable")
 #
         #self.requires("gflags/2.2.2@bincrafters/stable")
 #

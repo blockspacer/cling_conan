@@ -103,7 +103,7 @@ class ClingConan(ConanFile):
 
     # conan search double-conversion* -r=conan-center
 #    requires = (
-#        "openssl/OpenSSL_1_1_1-stable@conan/stable",
+#        "openssl/1.1.1-stable@conan/stable",
 #    )    
     
 #    @property
@@ -247,46 +247,48 @@ class ClingConan(ConanFile):
         self.copy("*.lib*", dst=dest, src="lib")
         self.copy("*.a*", dst=dest, src="lib")
 
-    def build(self):        
-        #with tools.chdir(self._llvm_source_subfolder):
-        #    with tools.chdir(self._cling_source_subfolder):
+    def build(self):   
+        with tools.vcvars(self.settings, only_diff=False): # https://github.com/conan-io/conan/issues/6577         
+            #with tools.chdir(self._llvm_source_subfolder):
+            #    with tools.chdir(self._cling_source_subfolder):
 
-        #tools.patch(base_path=self._source_subfolder, patch_file='0001-compiler-options.patch')
-        #tools.patch(base_path=self._llvm_source_subfolder, patch_file='0002-clang-cling-conan-support.patch')
-        cmake = self._configure_cmake()
+            #tools.patch(base_path=self._source_subfolder, patch_file='0001-compiler-options.patch')
+            #tools.patch(base_path=self._llvm_source_subfolder, patch_file='0002-clang-cling-conan-support.patch')
+            cmake = self._configure_cmake()
 
-        # don't hang all CPUs and force OS to kill build process
-        cpu_count = max(tools.cpu_count() - 2, 1)
-        self.output.info('Detected %s CPUs' % (cpu_count))
+            # don't hang all CPUs and force OS to kill build process
+            cpu_count = max(tools.cpu_count() - 2, 1)
+            self.output.info('Detected %s CPUs' % (cpu_count))
 
-        # -j flag for parallel builds
-        cmake.build(args=["--", "-j%s" % cpu_count])
+            # -j flag for parallel builds
+            cmake.build(args=["--", "-j%s" % cpu_count])
 
     def package(self):
-        self.copy(pattern=self._llvm_source_subfolder, dst="src", src=self.build_folder)
-        self.copy(pattern="LICENSE", dst="licenses", src=self._llvm_source_subfolder)
-        self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
-        self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
-        self.copy(pattern="*.h", dst="include", src="include", keep_path=True)
+        with tools.vcvars(self.settings, only_diff=False): # https://github.com/conan-io/conan/issues/6577     
+            self.copy(pattern=self._llvm_source_subfolder, dst="src", src=self.build_folder)
+            self.copy(pattern="LICENSE", dst="licenses", src=self._llvm_source_subfolder)
+            self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
+            self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
+            self.copy(pattern="*.h", dst="include", src="include", keep_path=True)
 
-        # need to copy lib/cmake/cling/ClingTargets.cmake required by ClingConfig.cmake
-        self.copy('*', src='%s/lib/cmake' % (self.build_folder), dst='lib/cmake')
+            # need to copy lib/cmake/cling/ClingTargets.cmake required by ClingConfig.cmake
+            self.copy('*', src='%s/lib/cmake' % (self.build_folder), dst='lib/cmake')
 
-        #if self.settings.os_build == 'Darwin':
-        #    libext = 'dylib'
-        #elif self.settings.os_build == 'Linux':
-        #    libext = 'so'
+            #if self.settings.os_build == 'Darwin':
+            #    libext = 'dylib'
+            #elif self.settings.os_build == 'Linux':
+            #    libext = 'so'
 
-        #self.copy('*', src='%s/include'  % self.install_dir, dst='include')
+            #self.copy('*', src='%s/include'  % self.install_dir, dst='include')
 
-        #for f in list(llvm_libs.keys()):
-        #    self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self._llvm_source_subfolder, dst='lib')
-        #self.copy('*', src='%s/lib/clang/%s/lib/darwin' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/lib/darwin' % self.llvm_source_version)
-        # Yes, these are include files that need to be copied to the lib folder.
-        #self.copy('*', src='%s/lib/clang/%s/include' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/include' % self.llvm_source_version)
+            #for f in list(llvm_libs.keys()):
+            #    self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self._llvm_source_subfolder, dst='lib')
+            #self.copy('*', src='%s/lib/clang/%s/lib/darwin' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/lib/darwin' % self.llvm_source_version)
+            # Yes, these are include files that need to be copied to the lib folder.
+            #self.copy('*', src='%s/lib/clang/%s/include' % (self._llvm_source_subfolder, self.llvm_source_version), dst='lib/clang/%s/include' % self.llvm_source_version)
 
-        cmake = self._configure_cmake()
-        cmake.install()
+            cmake = self._configure_cmake()
+            cmake.install()
 
     # NOTE: do not append packaged paths to env_info.PATH, env_info.LD_LIBRARY_PATH, etc.
     # because it can conflict with system compiler
